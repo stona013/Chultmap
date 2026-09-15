@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chult Karte</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3qUHtIVMaTQfvGo9jMZBRS76rBytM=" crossorigin="">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <strong>Chult Karte</strong>
+      <span id="storageMode" class="status">Lokaler Modus</span>
+    </div>
+    <div class="actions">
+      <button id="addModeBtn" type="button">Marker setzen</button>
+      <button id="exportBtn" type="button">Export</button>
+      <label class="importLabel">
+        Import
+        <input id="importInput" type="file" accept="application/json">
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <div id="map"></div>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 id="modalTitle">Marker</h2>
+
+      <label>
+        Titel
+        <input id="markerTitle" maxlength="80" autocomplete="off">
+      </label>
+
+      <label>
+        Kategorie
+        <select id="markerCategory">
+          <option value="place">Ort</option>
+          <option value="danger">Gefahr</option>
+          <option value="quest">Quest</option>
+          <option value="camp">Lager</option>
+          <option value="npc">NPC</option>
+          <option value="note">Notiz</option>
+        </select>
+      </label>
+
+      <label>
+        Notiz
+        <textarea id="markerNote" rows="6" maxlength="2000"></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button id="deleteBtn" type="button" class="danger hidden">Löschen</button>
+        <span class="spacer"></span>
+        <button id="cancelBtn" type="button">Abbrechen</button>
+        <button id="saveBtn" type="button" class="primary">Speichern</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

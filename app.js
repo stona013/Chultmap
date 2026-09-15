@@ -22,7 +22,7 @@
     attributionControl: false
   });
 
-  L.imageOverlay("assets/chult-map.png", bounds).addTo(map);
+  L.imageOverlay("assets/Chult-map.webp", bounds).addTo(map);
   map.fitBounds(bounds);
   map.setMaxBounds([
     [-IMAGE_HEIGHT * 0.25, -IMAGE_WIDTH * 0.25],

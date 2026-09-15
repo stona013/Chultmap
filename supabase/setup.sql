@@ -42,4 +42,15 @@ for delete
 to anon
 using (true);
 
-alter publication supabase_realtime add table public.markers;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'markers'
+  ) then
+    alter publication supabase_realtime add table public.markers;
+  end if;
+end $$;

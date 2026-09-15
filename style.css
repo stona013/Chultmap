@@ -2,7 +2,7 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #1b1b1b;
+  background: #171717;
   color: #f4f4f4;
 }
 
@@ -24,10 +24,16 @@ body {
   z-index: 1000;
 }
 
-.topbar > div {
+.brand {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .status {
@@ -35,17 +41,24 @@ body {
   padding: 4px 8px;
   border-radius: 999px;
   background: #333;
-  color: #ddd;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.status-ok {
+  background: #214d2a;
+  color: #dff7e3;
 }
 
-button,
-.importLabel {
+.status-warn {
+  background: #5a4619;
+  color: #fff0bf;
+}
+
+.status-error {
+  background: #5b2424;
+  color: #ffd6d6;
+}
+
+button {
   border: 1px solid #555;
   background: #303030;
   color: #fff;
@@ -55,8 +68,7 @@ button,
   cursor: pointer;
 }
 
-button:hover,
-.importLabel:hover {
+button:hover {
   background: #3c3c3c;
 }
 
@@ -71,13 +83,10 @@ button.danger {
   border-color: #aa4545;
 }
 
-.importLabel input {
-  display: none;
-}
-
 main {
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 
 #map {
@@ -88,6 +97,31 @@ main {
 
 .leaflet-container {
   background: #101010;
+}
+
+.config-error {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(10, 10, 10, 0.9);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.config-error > div {
+  max-width: 620px;
+  background: #242424;
+  border: 1px solid #555;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.config-error code {
+  background: #111;
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 
 .marker-pin {

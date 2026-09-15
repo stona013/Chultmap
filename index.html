@@ -12,22 +12,29 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
+    <div class="brand">
       <strong>Chult Karte</strong>
-      <span id="storageMode" class="status">Lokaler Modus</span>
+      <span id="connectionStatus" class="status status-warn">Verbinde...</span>
     </div>
+
     <div class="actions">
       <button id="addModeBtn" type="button">Marker setzen</button>
-      <button id="exportBtn" type="button">Export</button>
-      <label class="importLabel">
-        Import
-        <input id="importInput" type="file" accept="application/json">
-      </label>
+      <button id="reloadBtn" type="button">Neu laden</button>
     </div>
   </header>
 
   <main>
     <div id="map"></div>
+
+    <div id="configError" class="config-error hidden">
+      <div>
+        <h2>Supabase ist noch nicht eingerichtet</h2>
+        <p>
+          Trage in <code>config.js</code> deine Supabase Project URL und deinen öffentlichen anon key ein.
+          Ohne diese Daten startet die Karte absichtlich nicht im Offline Modus.
+        </p>
+      </div>
+    </div>
   </main>
 
   <div id="modalBackdrop" class="modal-backdrop hidden">

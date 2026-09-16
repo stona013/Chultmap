@@ -1,6 +1,6 @@
 (() => {
-  const IMAGE_WIDTH = 952;
-  const IMAGE_HEIGHT = 1289;
+  const IMAGE_WIDTH = 1107;
+const IMAGE_HEIGHT = 1499;
 
   const categoryLabels = {
     place: "Ort",
@@ -128,19 +128,28 @@
     return div;
   }
 
-  function drawAll() {
-    leafletMarkers.forEach(marker => marker.remove());
-    leafletMarkers.clear();
+ function drawAll() {
+  leafletMarkers.forEach(marker => marker.remove());
+  leafletMarkers.clear();
 
-    for (const m of markers) {
-      const lm = L.marker([m.y, m.x], {
-        icon: makeIcon(m.category)
-      }).addTo(map);
-
-      lm.bindPopup(() => popupHtml(m));
-      leafletMarkers.set(m.id, lm);
+  for (const m of markers) {
+    if (
+      !Number.isFinite(m.x) ||
+      !Number.isFinite(m.y)
+    ) {
+      console.warn("Ungültiger Marker:", m);
+      continue;
     }
+
+    const lm = L.marker([m.y, m.x], {
+      icon: makeIcon(m.category)
+    }).addTo(map);
+
+    lm.bindPopup(() => popupHtml(m));
+
+    leafletMarkers.set(m.id, lm);
   }
+}
 
   function setAddMode(value) {
     addMode = value;
@@ -179,25 +188,36 @@
     pendingPoint = null;
   }
 
-  async function loadRemote() {
-    setStatus("Lade Daten...", "status-warn");
+async function loadRemote() {
+  setStatus("Lade Daten...", "status-warn");
 
+  try {
     const { data, error } = await sb
       .from("markers")
       .select("*")
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error(error);
-      setStatus("Verbindungsfehler", "status-error");
-      alert("Die Marker konnten nicht aus Supabase geladen werden.");
-      return;
+      throw error;
     }
 
+    console.log("Marker aus Supabase geladen:", data);
+
     markers = (data || []).map(normalize);
+
+    console.log("Normalisierte Marker:", markers);
+
     drawAll();
+
+    console.log(`${markers.length} Marker angezeigt`);
+
     setStatus("Online", "status-ok");
+  } catch (error) {
+    console.error("Fehler beim Laden der Marker:", error);
+    setStatus("Verbindungsfehler", "status-error");
+    alert("Die Marker konnten nicht aus Supabase geladen werden.");
   }
+}
 
   async function createMarker(payload) {
     const { data, error } = await sb

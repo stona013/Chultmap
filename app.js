@@ -56,6 +56,8 @@ const IMAGE_HEIGHT = 1499;
     attributionControl: false
   });
 
+  window.debugMap = map;
+
   L.imageOverlay("assets/Chult-map.webp", bounds).addTo(map);
   map.fitBounds(bounds);
 
@@ -165,6 +167,8 @@ function drawAll() {
   }
 
   console.log(`${leafletMarkers.size} Marker angezeigt`);
+  window.debugMarkers = markers;
+window.debugLeafletMarkers = leafletMarkers;
 }
 
   function setAddMode(value) {

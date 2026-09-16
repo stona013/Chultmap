@@ -128,27 +128,43 @@ const IMAGE_HEIGHT = 1499;
     return div;
   }
 
- function drawAll() {
+function drawAll() {
   leafletMarkers.forEach(marker => marker.remove());
   leafletMarkers.clear();
 
+  console.log("Zeichne Marker:", markers);
+
+  const colors = {
+    place: "#2f6ea6",
+    danger: "#aa3434",
+    quest: "#a27b26",
+    camp: "#4c8d4f",
+    npc: "#7c4a9d",
+    note: "#666666"
+  };
+
   for (const m of markers) {
-    if (
-      !Number.isFinite(m.x) ||
-      !Number.isFinite(m.y)
-    ) {
+    console.log("Marker:", m.title, m.x, m.y);
+
+    if (!Number.isFinite(m.x) || !Number.isFinite(m.y)) {
       console.warn("Ungültiger Marker:", m);
       continue;
     }
 
-    const lm = L.marker([m.y, m.x], {
-      icon: makeIcon(m.category)
+    const lm = L.circleMarker([m.y, m.x], {
+      radius: 9,
+      color: "#ffffff",
+      weight: 3,
+      fillColor: colors[m.category] || "#666666",
+      fillOpacity: 1
     }).addTo(map);
 
     lm.bindPopup(() => popupHtml(m));
 
     leafletMarkers.set(m.id, lm);
   }
+
+  console.log(`${leafletMarkers.size} Marker angezeigt`);
 }
 
   function setAddMode(value) {

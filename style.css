@@ -34,6 +34,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .status {
@@ -43,20 +44,9 @@ body {
   background: #333;
 }
 
-.status-ok {
-  background: #214d2a;
-  color: #dff7e3;
-}
-
-.status-warn {
-  background: #5a4619;
-  color: #fff0bf;
-}
-
-.status-error {
-  background: #5b2424;
-  color: #ffd6d6;
-}
+.status-ok { background: #214d2a; color: #dff7e3; }
+.status-warn { background: #5a4619; color: #fff0bf; }
+.status-error { background: #5b2424; color: #ffd6d6; }
 
 button {
   border: 1px solid #555;
@@ -68,12 +58,12 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #3c3c3c;
-}
+button:hover { background: #3c3c3c; }
 
 button.primary,
-#addModeBtn.active {
+#addModeBtn.active,
+#drawModeBtn.active,
+#eraserModeBtn.active {
   background: #2f6ea6;
   border-color: #3f83be;
 }
@@ -81,6 +71,27 @@ button.primary,
 button.danger {
   background: #8a2f2f;
   border-color: #aa4545;
+}
+
+.tool-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #ddd;
+}
+
+.tool-control input[type="color"] {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #555;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tool-control input[type="range"] {
+  width: 90px;
 }
 
 main {
@@ -124,31 +135,6 @@ main {
   border-radius: 4px;
 }
 
-.marker-pin {
-  width: 22px;
-  height: 22px;
-  border: 3px solid #fff;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  box-shadow: 0 2px 6px rgba(0,0,0,.55);
-}
-
-.marker-pin span {
-  display: block;
-  width: 8px;
-  height: 8px;
-  margin: 4px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.95);
-}
-
-.pin-place { background: #2f6ea6; }
-.pin-danger { background: #aa3434; }
-.pin-quest { background: #a27b26; }
-.pin-camp { background: #4c8d4f; }
-.pin-npc { background: #7c4a9d; }
-.pin-note { background: #666; }
-
 .popup-title {
   font-weight: 700;
   margin-bottom: 5px;
@@ -165,12 +151,23 @@ main {
   max-width: 260px;
 }
 
-.popup-edit {
+.popup-actions {
+  display: flex;
+  gap: 6px;
   margin-top: 10px;
-  width: 100%;
+}
+
+.popup-actions button {
+  flex: 1;
   color: #111;
   background: #efefef;
   border: 1px solid #bbb;
+}
+
+.popup-actions button.popup-delete {
+  color: #fff;
+  background: #8a2f2f;
+  border-color: #aa4545;
 }
 
 .modal-backdrop {
@@ -197,9 +194,7 @@ main {
   box-shadow: 0 16px 50px rgba(0,0,0,.5);
 }
 
-.modal h2 {
-  margin-top: 0;
-}
+.modal h2 { margin-top: 0; }
 
 .modal label {
   display: block;
@@ -220,9 +215,7 @@ main {
   color: #fff;
 }
 
-.modal textarea {
-  resize: vertical;
-}
+.modal textarea { resize: vertical; }
 
 .modal-actions {
   display: flex;
@@ -231,11 +224,9 @@ main {
   margin-top: 16px;
 }
 
-.spacer {
-  flex: 1;
-}
+.spacer { flex: 1; }
 
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
@@ -244,6 +235,5 @@ main {
 
   .actions {
     width: 100%;
-    flex-wrap: wrap;
   }
 }

@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chult Karte</title>
 
-<link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,6 +17,21 @@
 
     <div class="actions">
       <button id="addModeBtn" type="button">Marker setzen</button>
+
+      <button id="drawModeBtn" type="button">Stift</button>
+
+      <label class="tool-control">
+        Farbe
+        <input id="drawColor" type="color" value="#d32f2f">
+      </label>
+
+      <label class="tool-control">
+        Größe
+        <input id="drawSize" type="range" min="2" max="30" value="6">
+        <span id="drawSizeValue">6</span>
+      </label>
+
+      <button id="eraserModeBtn" type="button">Radiergummi</button>
       <button id="reloadBtn" type="button">Neu laden</button>
     </div>
   </header>
@@ -30,8 +43,7 @@
       <div>
         <h2>Supabase ist noch nicht eingerichtet</h2>
         <p>
-          Trage in <code>config.js</code> deine Supabase Project URL und deinen öffentlichen anon key ein.
-          Ohne diese Daten startet die Karte absichtlich nicht im Offline Modus.
+          Trage in <code>config.js</code> deine Supabase Project URL und deinen öffentlichen Key ein.
         </p>
       </div>
     </div>
@@ -72,10 +84,9 @@
     </section>
   </div>
 
- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=8"></script>
-<script src="app.js?v=8"></script>
+  <script src="config.js?v=9"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

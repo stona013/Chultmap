@@ -82,8 +82,6 @@
     [IMAGE_HEIGHT * 1.25, IMAGE_WIDTH * 1.25]
   ]);
 
-  ensureHexGridControls();
-  renderHexGrid();
 
   let mode = "move";
   let editingMarker = null;
@@ -116,6 +114,9 @@ let hexGridOpacity = 0.48;
 let hexGridRadius = 17.0;
 let hexGridOffsetX = 1.0;
 let hexGridOffsetY = 1.0;
+
+  ensureHexGridControls();
+  renderHexGrid();
 
   
 

@@ -20,7 +20,20 @@
     drawColor: document.getElementById("drawColor"),
     drawSize: document.getElementById("drawSize"),
     drawSizeValue: document.getElementById("drawSizeValue"),
+    notebookBtn: document.getElementById("notebookBtn"),
     reloadBtn: document.getElementById("reloadBtn"),
+    dayMinusBtn: document.getElementById("dayMinusBtn"),
+    dayPlusBtn: document.getElementById("dayPlusBtn"),
+    daysValue: document.getElementById("daysValue"),
+    notebookBackdrop: document.getElementById("notebookBackdrop"),
+    notebookPages: document.getElementById("notebookPages"),
+    newPageBtn: document.getElementById("newPageBtn"),
+    closeNotebookBtn: document.getElementById("closeNotebookBtn"),
+    pageTitle: document.getElementById("pageTitle"),
+    pageContent: document.getElementById("pageContent"),
+    savePageBtn: document.getElementById("savePageBtn"),
+    deletePageBtn: document.getElementById("deletePageBtn"),
+    pageSaveStatus: document.getElementById("pageSaveStatus"),
     backdrop: document.getElementById("modalBackdrop"),
     title: document.getElementById("markerTitle"),
     category: document.getElementById("markerCategory"),
@@ -75,6 +88,9 @@
 
   let markers = [];
   let drawings = [];
+  let notebookPages = [];
+  let currentPageId = null;
+  let daysUnderway = 0;
 
   const leafletMarkers = new Map();
   const leafletDrawings = new Map();
@@ -292,6 +308,8 @@
       window.debugMarkers = markers;
       window.debugDrawings = drawings;
 
+      await Promise.all([loadTracker(), loadNotebook()]);
+
       setStatus("Online", "status-ok");
     } catch (error) {
       console.error("Fehler beim Laden:", error);
@@ -430,6 +448,176 @@
     }
   }
 
+
+  function normalizePage(row) {
+    return {
+      id: String(row.id),
+      title: String(row.title || "Neue Seite"),
+      content: String(row.content || ""),
+      created_at: row.created_at || new Date().toISOString(),
+      updated_at: row.updated_at || row.created_at || new Date().toISOString()
+    };
+  }
+
+  async function loadTracker() {
+    const { data, error } = await sb
+      .from("campaign_state")
+      .select("value")
+      .eq("key", "days_underway")
+      .maybeSingle();
+
+    if (error) throw error;
+
+    daysUnderway = Number(data?.value ?? 0);
+    if (!Number.isFinite(daysUnderway)) daysUnderway = 0;
+    ui.daysValue.textContent = String(daysUnderway);
+  }
+
+  async function setDays(value) {
+    const safeValue = Math.max(0, Math.floor(Number(value) || 0));
+
+    const { error } = await sb
+      .from("campaign_state")
+      .upsert({
+        key: "days_underway",
+        value: safeValue,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "key" });
+
+    if (error) throw error;
+
+    daysUnderway = safeValue;
+    ui.daysValue.textContent = String(daysUnderway);
+  }
+
+  function renderNotebookPages() {
+    ui.notebookPages.innerHTML = "";
+
+    for (const page of notebookPages) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "page-list-item";
+      if (page.id === currentPageId) button.classList.add("active");
+
+      const title = document.createElement("span");
+      title.textContent = page.title || "Neue Seite";
+
+      const date = document.createElement("span");
+      date.className = "page-list-date";
+      date.textContent = new Date(page.updated_at).toLocaleString("de-DE");
+
+      button.append(title, date);
+      button.addEventListener("click", () => selectPage(page.id));
+      ui.notebookPages.appendChild(button);
+    }
+  }
+
+  function selectPage(id) {
+    const page = notebookPages.find(p => p.id === id);
+    if (!page) return;
+
+    currentPageId = id;
+    ui.pageTitle.value = page.title;
+    ui.pageContent.value = page.content;
+    ui.deletePageBtn.classList.remove("hidden");
+    ui.pageSaveStatus.textContent = "";
+    renderNotebookPages();
+  }
+
+  function clearPageEditor() {
+    currentPageId = null;
+    ui.pageTitle.value = "";
+    ui.pageContent.value = "";
+    ui.deletePageBtn.classList.add("hidden");
+    ui.pageSaveStatus.textContent = "";
+    renderNotebookPages();
+  }
+
+  async function loadNotebook() {
+    const { data, error } = await sb
+      .from("notebook_pages")
+      .select("*")
+      .order("updated_at", { ascending: false });
+
+    if (error) throw error;
+
+    notebookPages = (data || []).map(normalizePage);
+
+    if (currentPageId && !notebookPages.some(p => p.id === currentPageId)) {
+      currentPageId = null;
+    }
+
+    if (!currentPageId && notebookPages.length > 0) {
+      currentPageId = notebookPages[0].id;
+    }
+
+    if (currentPageId) selectPage(currentPageId);
+    else clearPageEditor();
+  }
+
+  async function createPage() {
+    const { data, error } = await sb
+      .from("notebook_pages")
+      .insert({ title: "Neue Seite", content: "" })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    notebookPages.unshift(normalizePage(data));
+    selectPage(String(data.id));
+    setTimeout(() => {
+      ui.pageTitle.focus();
+      ui.pageTitle.select();
+    }, 0);
+  }
+
+  async function saveCurrentPage() {
+    if (!currentPageId) await createPage();
+
+    const title = ui.pageTitle.value.trim() || "Neue Seite";
+    const content = ui.pageContent.value;
+    const updatedAt = new Date().toISOString();
+
+    ui.pageSaveStatus.textContent = "Speichert...";
+
+    const { data, error } = await sb
+      .from("notebook_pages")
+      .update({ title, content, updated_at: updatedAt })
+      .eq("id", currentPageId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const index = notebookPages.findIndex(p => p.id === currentPageId);
+    if (index !== -1) notebookPages[index] = normalizePage(data);
+
+    notebookPages.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+    renderNotebookPages();
+    ui.pageSaveStatus.textContent = "Gespeichert";
+  }
+
+  async function deleteCurrentPage() {
+    if (!currentPageId) return;
+
+    const page = notebookPages.find(p => p.id === currentPageId);
+    if (!confirm(`Seite "${page?.title || "Neue Seite"}" wirklich löschen?`)) return;
+
+    const { error } = await sb
+      .from("notebook_pages")
+      .delete()
+      .eq("id", currentPageId);
+
+    if (error) throw error;
+
+    notebookPages = notebookPages.filter(p => p.id !== currentPageId);
+    currentPageId = notebookPages[0]?.id || null;
+
+    if (currentPageId) selectPage(currentPageId);
+    else clearPageEditor();
+  }
+
   function subscribeRealtime() {
     sb.channel("map-live")
       .on(
@@ -441,6 +629,16 @@
         "postgres_changes",
         { event: "*", schema: "public", table: "drawings" },
         loadAll
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "campaign_state" },
+        loadTracker
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notebook_pages" },
+        loadNotebook
       )
       .subscribe(status => {
         if (status === "SUBSCRIBED") {
@@ -466,6 +664,71 @@
   });
 
   ui.reloadBtn.addEventListener("click", loadAll);
+
+  ui.dayPlusBtn.addEventListener("click", async () => {
+    try {
+      await setDays(daysUnderway + 1);
+    } catch (error) {
+      console.error(error);
+      alert("Tage Unterwegs konnte nicht gespeichert werden.");
+    }
+  });
+
+  ui.dayMinusBtn.addEventListener("click", async () => {
+    try {
+      await setDays(daysUnderway - 1);
+    } catch (error) {
+      console.error(error);
+      alert("Tage Unterwegs konnte nicht gespeichert werden.");
+    }
+  });
+
+  ui.notebookBtn.addEventListener("click", async () => {
+    ui.notebookBackdrop.classList.remove("hidden");
+    try {
+      await loadNotebook();
+    } catch (error) {
+      console.error(error);
+      alert("Das Notizbuch konnte nicht geladen werden.");
+    }
+  });
+
+  ui.closeNotebookBtn.addEventListener("click", () => {
+    ui.notebookBackdrop.classList.add("hidden");
+  });
+
+  ui.notebookBackdrop.addEventListener("click", event => {
+    if (event.target === ui.notebookBackdrop) {
+      ui.notebookBackdrop.classList.add("hidden");
+    }
+  });
+
+  ui.newPageBtn.addEventListener("click", async () => {
+    try {
+      await createPage();
+    } catch (error) {
+      console.error(error);
+      alert("Die neue Seite konnte nicht erstellt werden.");
+    }
+  });
+
+  ui.savePageBtn.addEventListener("click", async () => {
+    try {
+      await saveCurrentPage();
+    } catch (error) {
+      console.error(error);
+      ui.pageSaveStatus.textContent = "Fehler beim Speichern";
+    }
+  });
+
+  ui.deletePageBtn.addEventListener("click", async () => {
+    try {
+      await deleteCurrentPage();
+    } catch (error) {
+      console.error(error);
+      alert("Die Seite konnte nicht gelöscht werden.");
+    }
+  });
 
   map.on("click", event => {
     if (mode !== "marker") return;

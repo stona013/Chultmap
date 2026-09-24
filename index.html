@@ -15,6 +15,13 @@
       <span id="connectionStatus" class="status status-warn">Verbinde...</span>
     </div>
 
+    <div class="tracker">
+      <span class="tracker-label">Tage Unterwegs</span>
+      <button id="dayMinusBtn" type="button">−</button>
+      <strong id="daysValue">0</strong>
+      <button id="dayPlusBtn" type="button">+</button>
+    </div>
+
     <div class="actions">
       <button id="addModeBtn" type="button">Marker setzen</button>
 
@@ -32,6 +39,7 @@
       </label>
 
       <button id="eraserModeBtn" type="button">Radiergummi</button>
+      <button id="notebookBtn" type="button">Notizbuch</button>
       <button id="reloadBtn" type="button">Neu laden</button>
     </div>
   </header>
@@ -84,9 +92,35 @@
     </section>
   </div>
 
+
+  <div id="notebookBackdrop" class="modal-backdrop hidden">
+    <section class="notebook" role="dialog" aria-modal="true">
+      <aside class="notebook-sidebar">
+        <div class="notebook-sidebar-header">
+          <h2>Notizbuch</h2>
+          <button id="newPageBtn" type="button">Neue Seite</button>
+        </div>
+        <div id="notebookPages" class="notebook-pages"></div>
+      </aside>
+      <div class="notebook-editor">
+        <div class="notebook-editor-top">
+          <input id="pageTitle" class="page-title" maxlength="120" placeholder="Seitentitel">
+          <button id="closeNotebookBtn" type="button">Schließen</button>
+        </div>
+        <textarea id="pageContent" class="page-content" placeholder="Notizen eingeben..."></textarea>
+        <div class="notebook-footer">
+          <span id="pageSaveStatus" class="save-status"></span>
+          <span class="spacer"></span>
+          <button id="deletePageBtn" type="button" class="danger hidden">Seite löschen</button>
+          <button id="savePageBtn" type="button" class="primary">Seite speichern</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="config.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

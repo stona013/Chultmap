@@ -491,26 +491,29 @@
   }
 
   function renderNotebookPages() {
-    ui.notebookPages.innerHTML = "";
+  ui.notebookPages.innerHTML = "";
 
-    for (const page of notebookPages) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "page-list-item";
-      if (page.id === currentPageId) button.classList.add("active");
+  for (const page of notebookPages) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "page-list-item";
 
-      const title = document.createElement("span");
-      title.textContent = page.title || "Neue Seite";
-
-      const date = document.createElement("span");
-      date.className = "page-list-date";
-      date.textContent = new Date(page.updated_at).toLocaleString("de-DE");
-
-      button.append(title, date);
-      button.addEventListener("click", () => selectPage(page.id));
-      ui.notebookPages.appendChild(button);
+    if (page.id === currentPageId) {
+      button.classList.add("active");
     }
+
+    const title = document.createElement("span");
+    title.textContent = page.title || "Neue Seite";
+
+    button.append(title);
+
+    button.addEventListener("click", () => {
+      selectPage(page.id);
+    });
+
+    ui.notebookPages.appendChild(button);
   }
+}
 
   function selectPage(id) {
     const page = notebookPages.find(p => p.id === id);

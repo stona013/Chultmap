@@ -111,9 +111,9 @@ let hexGridOpacity = 0.48;
 // Startwerte für das auf der Chult-Karte vorhandene Raster.
 // Falls die Linien um wenige Pixel versetzt sind, können Größe, X und Y
 // direkt über die eingebauten Raster-Einstellungen angepasst werden.
-let hexGridRadius = 17.2;
-let hexGridOffsetX = 2.0;
-let hexGridOffsetY = 5.0;
+let hexGridRadius = 5.0;
+let hexGridOffsetX = -4.0;
+let hexGridOffsetY = 3.5;
 
   ensureHexGridControls();
   renderHexGrid();
@@ -174,7 +174,7 @@ let hexGridOffsetY = 5.0;
       return label;
     };
 
-    panel.appendChild(makeNumber("Größe", "hexGridRadius", hexGridRadius, 0.1, 10, 30));
+    panel.appendChild(makeNumber("Größe", "hexGridRadius", hexGridRadius, 0.1, 2, 20));
     panel.appendChild(makeNumber("X", "hexGridOffsetX", hexGridOffsetX, 0.5, -40, 40));
     panel.appendChild(makeNumber("Y", "hexGridOffsetY", hexGridOffsetY, 0.5, -40, 40));
 
@@ -217,7 +217,7 @@ let hexGridOffsetY = 5.0;
     const offsetYInput = panel.querySelector("#hexGridOffsetY");
 
     const refresh = () => {
-      hexGridRadius = Math.max(10, Math.min(30, Number(radiusInput.value) || 17));
+      hexGridRadius = Math.max(2, Math.min(20, Number(radiusInput.value) || 5));
       hexGridOffsetX = Math.max(-40, Math.min(40, Number(offsetXInput.value) || 0));
       hexGridOffsetY = Math.max(-40, Math.min(40, Number(offsetYInput.value) || 0));
       renderHexGrid();
@@ -228,9 +228,9 @@ let hexGridOffsetY = 5.0;
     offsetYInput.addEventListener("input", refresh);
 
     reset.addEventListener("click", () => {
-      hexGridRadius = 17.2;
-      hexGridOffsetX = 2.0;
-      hexGridOffsetY = 5.0;
+      hexGridRadius = 5.0;
+      hexGridOffsetX = -4.0;
+      hexGridOffsetY = 3.5;
 
       radiusInput.value = String(hexGridRadius);
       offsetXInput.value = String(hexGridOffsetX);

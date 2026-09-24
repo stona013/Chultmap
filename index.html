@@ -22,26 +22,31 @@
       <button id="dayPlusBtn" type="button">+</button>
     </div>
 
-    <div class="actions">
-      <button id="addModeBtn" type="button">Marker setzen</button>
+<div class="actions">
+  <button id="addModeBtn" type="button">Marker setzen</button>
 
-      <button id="drawModeBtn" type="button">Stift</button>
+  <button id="drawModeBtn" type="button">Stift</button>
 
-      <label class="tool-control">
-        Farbe
-        <input id="drawColor" type="color" value="#d32f2f">
-      </label>
+  <label class="tool-control">
+    Farbe
+    <input id="drawColor" type="color" value="#d32f2f">
+  </label>
 
-      <label class="tool-control">
-        Größe
-        <input id="drawSize" type="range" min="2" max="30" value="6">
-        <span id="drawSizeValue">6</span>
-      </label>
+  <label class="tool-control">
+    Größe
+    <input id="drawSize" type="range" min="2" max="30" value="6">
+    <span id="drawSizeValue">6</span>
+  </label>
 
-      <button id="eraserModeBtn" type="button">Radiergummi</button>
-      <button id="notebookBtn" type="button">Notizbuch</button>
-      <button id="reloadBtn" type="button">Neu laden</button>
-    </div>
+  <button id="eraserModeBtn" type="button">Radiergummi</button>
+
+  <button id="positionModeBtn" type="button">
+    Position setzen
+  </button>
+
+  <button id="notebookBtn" type="button">Notizbuch</button>
+  <button id="reloadBtn" type="button">Neu laden</button>
+</div>
   </header>
 
   <main>
@@ -121,6 +126,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=12"></script>
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

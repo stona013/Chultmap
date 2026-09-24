@@ -17,7 +17,6 @@
     addModeBtn: document.getElementById("addModeBtn"),
     drawModeBtn: document.getElementById("drawModeBtn"),
     eraserModeBtn: document.getElementById("eraserModeBtn"),
-    positionModeBtn: document.getElementById("positionModeBtn"),
     drawColor: document.getElementById("drawColor"),
     drawSize: document.getElementById("drawSize"),
     drawSizeValue: document.getElementById("drawSizeValue"),
@@ -499,10 +498,14 @@ let hexGridOffsetY = -7.5;
     ui.addModeBtn.classList.toggle("active", mode === "marker");
     ui.drawModeBtn.classList.toggle("active", mode === "draw");
     ui.eraserModeBtn.classList.toggle("active", mode === "erase");
-    ui.positionModeBtn.classList.toggle("active", mode === "position");
 
-    ui.addModeBtn.textContent =
-      mode === "marker" ? "Klicke auf die Karte" : "Marker setzen";
+    if (mode === "marker") {
+      ui.addModeBtn.textContent = "Klicke auf die Karte";
+      map.dragging.enable();
+      map.getContainer().style.cursor = "crosshair";
+    } else {
+      ui.addModeBtn.textContent = "Marker setzen";
+    }
 
     if (mode === "draw") {
       map.dragging.disable();
@@ -510,14 +513,9 @@ let hexGridOffsetY = -7.5;
     } else if (mode === "erase") {
       map.dragging.disable();
       map.getContainer().style.cursor = "cell";
-    } else {
+    } else if (mode !== "marker") {
       map.dragging.enable();
-
-      if (mode === "marker" || mode === "position") {
-        map.getContainer().style.cursor = "crosshair";
-      } else {
-        map.getContainer().style.cursor = "";
-      }
+      map.getContainer().style.cursor = "";
     }
   }
 
@@ -572,7 +570,7 @@ let hexGridOffsetY = -7.5;
       window.debugMarkers = markers;
       window.debugDrawings = drawings;
 
-      await Promise.all([loadTracker(), loadNotebook(), loadCurrentPosition()]);
+      await Promise.all([loadTracker(), loadNotebook()]);
 
       setStatus("Online", "status-ok");
     } catch (error) {
@@ -897,13 +895,6 @@ async function loadCurrentPosition() {
   }
 
   if (!data || !data.value) {
-    currentPosition = null;
-
-    if (currentPositionMarker) {
-      currentPositionMarker.remove();
-      currentPositionMarker = null;
-    }
-
     return;
   }
 
@@ -1024,10 +1015,7 @@ async function saveCurrentPosition(x, y) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "campaign_state" },
-        async () => {
-          await loadTracker();
-          await loadCurrentPosition();
-        }
+        loadTracker
       )
       .on(
         "postgres_changes",
@@ -1051,10 +1039,6 @@ async function saveCurrentPosition(x, y) {
 
   ui.eraserModeBtn.addEventListener("click", () => {
     setMode(mode === "erase" ? "move" : "erase");
-  });
-
-  ui.positionModeBtn.addEventListener("click", () => {
-    setMode(mode === "position" ? "move" : "position");
   });
 
   ui.drawSize.addEventListener("input", () => {
@@ -1128,7 +1112,9 @@ async function saveCurrentPosition(x, y) {
     }
   });
 
-  map.on("click", async event => {
+  map.on("click", event => {
+    if (mode !== "marker") return;
+
     const p = event.latlng;
 
     if (
@@ -1136,23 +1122,7 @@ async function saveCurrentPosition(x, y) {
       p.lng > IMAGE_WIDTH ||
       p.lat < 0 ||
       p.lat > IMAGE_HEIGHT
-    ) {
-      return;
-    }
-
-    if (mode === "position") {
-      try {
-        await saveCurrentPosition(p.lng, p.lat);
-        setMode("move");
-      } catch (error) {
-        console.error(error);
-        alert("Die Position konnte nicht gespeichert werden.");
-      }
-
-      return;
-    }
-
-    if (mode !== "marker") return;
+    ) return;
 
     setMode("move");
     openCreateModal({ x: p.lng, y: p.lat });

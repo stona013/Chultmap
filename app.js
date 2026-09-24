@@ -17,7 +17,6 @@
     addModeBtn: document.getElementById("addModeBtn"),
     drawModeBtn: document.getElementById("drawModeBtn"),
     eraserModeBtn: document.getElementById("eraserModeBtn"),
-    positionModeBtn: document.getElementById("positionModeBtn"),
     drawColor: document.getElementById("drawColor"),
     drawSize: document.getElementById("drawSize"),
     drawSizeValue: document.getElementById("drawSizeValue"),
@@ -43,33 +42,6 @@
     cancelBtn: document.getElementById("cancelBtn"),
     saveBtn: document.getElementById("saveBtn")
   };
-
-
-  function ensurePositionButton() {
-    let button = document.getElementById("positionModeBtn");
-
-    if (!button) {
-      const actions = document.querySelector(".actions");
-      if (!actions) return null;
-
-      button = document.createElement("button");
-      button.id = "positionModeBtn";
-      button.type = "button";
-      button.textContent = "Position setzen";
-
-      const notebookButton = document.getElementById("notebookBtn");
-      if (notebookButton) {
-        actions.insertBefore(button, notebookButton);
-      } else {
-        actions.appendChild(button);
-      }
-    }
-
-    ui.positionModeBtn = button;
-    return button;
-  }
-
-  ensurePositionButton();
 
   const cfg = window.APP_CONFIG || {};
   const configured = Boolean(
@@ -110,6 +82,9 @@
     [IMAGE_HEIGHT * 1.25, IMAGE_WIDTH * 1.25]
   ]);
 
+  ensureHexGridControls();
+  renderHexGrid();
+
   let mode = "move";
   let editingMarker = null;
   let pendingPoint = null;
@@ -130,7 +105,225 @@
 
 let currentPosition = null;
 let currentPositionMarker = null;
+
+let hexGridOverlay = null;
+let hexGridVisible = true;
+let hexGridOpacity = 0.48;
+
+// Startwerte für das auf der Chult-Karte vorhandene Raster.
+// Falls die Linien um wenige Pixel versetzt sind, können Größe, X und Y
+// direkt über die eingebauten Raster-Einstellungen angepasst werden.
+let hexGridRadius = 17.0;
+let hexGridOffsetX = 1.0;
+let hexGridOffsetY = 1.0;
+
   
+
+  function ensureHexGridControls() {
+    const actions = document.querySelector(".actions");
+    if (!actions || document.getElementById("hexGridToggleBtn")) return;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "hex-grid-controls";
+
+    const toggle = document.createElement("button");
+    toggle.id = "hexGridToggleBtn";
+    toggle.type = "button";
+    toggle.textContent = "Hexgrid";
+    toggle.classList.add("active");
+
+    const opacityLabel = document.createElement("label");
+    opacityLabel.className = "hex-grid-control";
+    opacityLabel.textContent = "Stärke";
+
+    const opacity = document.createElement("input");
+    opacity.id = "hexGridOpacity";
+    opacity.type = "range";
+    opacity.min = "0.08";
+    opacity.max = "0.9";
+    opacity.step = "0.02";
+    opacity.value = String(hexGridOpacity);
+    opacity.title = "Deckkraft des Hexrasters";
+
+    opacityLabel.appendChild(opacity);
+
+    const details = document.createElement("details");
+    details.className = "hex-grid-details";
+
+    const summary = document.createElement("summary");
+    summary.textContent = "Raster anpassen";
+    details.appendChild(summary);
+
+    const panel = document.createElement("div");
+    panel.className = "hex-grid-adjust-panel";
+
+    const makeNumber = (labelText, id, value, step, min, max) => {
+      const label = document.createElement("label");
+      label.textContent = labelText;
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.id = id;
+      input.value = String(value);
+      input.step = String(step);
+      input.min = String(min);
+      input.max = String(max);
+
+      label.appendChild(input);
+      return label;
+    };
+
+    panel.appendChild(makeNumber("Größe", "hexGridRadius", hexGridRadius, 0.1, 10, 30));
+    panel.appendChild(makeNumber("X", "hexGridOffsetX", hexGridOffsetX, 0.5, -40, 40));
+    panel.appendChild(makeNumber("Y", "hexGridOffsetY", hexGridOffsetY, 0.5, -40, 40));
+
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.id = "hexGridResetBtn";
+    reset.textContent = "Zurücksetzen";
+    panel.appendChild(reset);
+
+    details.appendChild(panel);
+    wrapper.append(toggle, opacityLabel, details);
+
+    const notebookButton = document.getElementById("notebookBtn");
+    if (notebookButton) {
+      actions.insertBefore(wrapper, notebookButton);
+    } else {
+      actions.appendChild(wrapper);
+    }
+
+    toggle.addEventListener("click", () => {
+      hexGridVisible = !hexGridVisible;
+      toggle.classList.toggle("active", hexGridVisible);
+
+      if (hexGridOverlay) {
+        if (hexGridVisible) {
+          if (!map.hasLayer(hexGridOverlay)) hexGridOverlay.addTo(map);
+        } else {
+          map.removeLayer(hexGridOverlay);
+        }
+      }
+    });
+
+    opacity.addEventListener("input", () => {
+      hexGridOpacity = Number(opacity.value);
+      renderHexGrid();
+    });
+
+    const radiusInput = panel.querySelector("#hexGridRadius");
+    const offsetXInput = panel.querySelector("#hexGridOffsetX");
+    const offsetYInput = panel.querySelector("#hexGridOffsetY");
+
+    const refresh = () => {
+      hexGridRadius = Math.max(10, Math.min(30, Number(radiusInput.value) || 17));
+      hexGridOffsetX = Math.max(-40, Math.min(40, Number(offsetXInput.value) || 0));
+      hexGridOffsetY = Math.max(-40, Math.min(40, Number(offsetYInput.value) || 0));
+      renderHexGrid();
+    };
+
+    radiusInput.addEventListener("input", refresh);
+    offsetXInput.addEventListener("input", refresh);
+    offsetYInput.addEventListener("input", refresh);
+
+    reset.addEventListener("click", () => {
+      hexGridRadius = 17.0;
+      hexGridOffsetX = 1.0;
+      hexGridOffsetY = 1.0;
+
+      radiusInput.value = String(hexGridRadius);
+      offsetXInput.value = String(hexGridOffsetX);
+      offsetYInput.value = String(hexGridOffsetY);
+      opacity.value = "0.48";
+      hexGridOpacity = 0.48;
+
+      renderHexGrid();
+    });
+  }
+
+  function buildHexGridSvg(radius, offsetX, offsetY) {
+    const width = IMAGE_WIDTH;
+    const height = IMAGE_HEIGHT;
+
+    const hexWidth = Math.sqrt(3) * radius;
+    const rowStep = radius * 1.5;
+
+    const paths = [];
+
+    // Zusätzliche Reihen und Spalten außerhalb des Bildes verhindern,
+    // dass am Rand Lücken entstehen, wenn das Raster verschoben wird.
+    const startRow = Math.floor((-radius * 2 - offsetY) / rowStep) - 1;
+    const endRow = Math.ceil((height + radius * 2 - offsetY) / rowStep) + 1;
+
+    for (let row = startRow; row <= endRow; row++) {
+      const cy = offsetY + row * rowStep;
+      const rowShift = (Math.abs(row) % 2) * (hexWidth / 2);
+
+      const startCol = Math.floor((-hexWidth * 2 - offsetX - rowShift) / hexWidth) - 1;
+      const endCol = Math.ceil((width + hexWidth * 2 - offsetX - rowShift) / hexWidth) + 1;
+
+      for (let col = startCol; col <= endCol; col++) {
+        const cx = offsetX + rowShift + col * hexWidth;
+
+        const points = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 180 * (60 * i - 90);
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          points.push([x, y]);
+        }
+
+        const d = [
+          `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`,
+          ...points.slice(1).map(p => `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`),
+          "Z"
+        ].join(" ");
+
+        paths.push(d);
+      }
+    }
+
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg"
+           width="${width}"
+           height="${height}"
+           viewBox="0 0 ${width} ${height}">
+        <path d="${paths.join(" ")}"
+              fill="none"
+              stroke="#1d1d1d"
+              stroke-width="1.2"
+              stroke-linejoin="round"
+              opacity="${hexGridOpacity}"
+              vector-effect="non-scaling-stroke"/>
+      </svg>
+    `;
+  }
+
+  function renderHexGrid() {
+    if (hexGridOverlay) {
+      map.removeLayer(hexGridOverlay);
+      hexGridOverlay = null;
+    }
+
+    const svg = buildHexGridSvg(
+      hexGridRadius,
+      hexGridOffsetX,
+      hexGridOffsetY
+    );
+
+    const dataUrl = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+
+    hexGridOverlay = L.imageOverlay(dataUrl, bounds, {
+      interactive: false,
+      opacity: 1,
+      pane: "overlayPane"
+    });
+
+    if (hexGridVisible) {
+      hexGridOverlay.addTo(map);
+    }
+  }
+
   function setStatus(text, type) {
     ui.connectionStatus.textContent = text;
     ui.connectionStatus.className = `status ${type}`;
@@ -268,12 +461,10 @@ let currentPositionMarker = null;
     ui.drawModeBtn.classList.toggle("active", mode === "draw");
     ui.eraserModeBtn.classList.toggle("active", mode === "erase");
 
-    if (ui.positionModeBtn) {
-      ui.positionModeBtn.classList.toggle("active", mode === "position");
-    }
-
     if (mode === "marker") {
       ui.addModeBtn.textContent = "Klicke auf die Karte";
+      map.dragging.enable();
+      map.getContainer().style.cursor = "crosshair";
     } else {
       ui.addModeBtn.textContent = "Marker setzen";
     }
@@ -284,14 +475,9 @@ let currentPositionMarker = null;
     } else if (mode === "erase") {
       map.dragging.disable();
       map.getContainer().style.cursor = "cell";
-    } else {
+    } else if (mode !== "marker") {
       map.dragging.enable();
-
-      if (mode === "marker" || mode === "position") {
-        map.getContainer().style.cursor = "crosshair";
-      } else {
-        map.getContainer().style.cursor = "";
-      }
+      map.getContainer().style.cursor = "";
     }
   }
 
@@ -346,7 +532,7 @@ let currentPositionMarker = null;
       window.debugMarkers = markers;
       window.debugDrawings = drawings;
 
-      await Promise.all([loadTracker(), loadNotebook(), loadCurrentPosition()]);
+      await Promise.all([loadTracker(), loadNotebook()]);
 
       setStatus("Online", "status-ok");
     } catch (error) {
@@ -671,13 +857,6 @@ async function loadCurrentPosition() {
   }
 
   if (!data || !data.value) {
-    currentPosition = null;
-
-    if (currentPositionMarker) {
-      currentPositionMarker.remove();
-      currentPositionMarker = null;
-    }
-
     return;
   }
 
@@ -798,10 +977,7 @@ async function saveCurrentPosition(x, y) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "campaign_state" },
-        async () => {
-          await loadTracker();
-          await loadCurrentPosition();
-        }
+        loadTracker
       )
       .on(
         "postgres_changes",
@@ -826,12 +1002,6 @@ async function saveCurrentPosition(x, y) {
   ui.eraserModeBtn.addEventListener("click", () => {
     setMode(mode === "erase" ? "move" : "erase");
   });
-
-  if (ui.positionModeBtn) {
-    ui.positionModeBtn.addEventListener("click", () => {
-      setMode(mode === "position" ? "move" : "position");
-    });
-  }
 
   ui.drawSize.addEventListener("input", () => {
     ui.drawSizeValue.textContent = ui.drawSize.value;
@@ -904,7 +1074,9 @@ async function saveCurrentPosition(x, y) {
     }
   });
 
-  map.on("click", async event => {
+  map.on("click", event => {
+    if (mode !== "marker") return;
+
     const p = event.latlng;
 
     if (
@@ -912,23 +1084,7 @@ async function saveCurrentPosition(x, y) {
       p.lng > IMAGE_WIDTH ||
       p.lat < 0 ||
       p.lat > IMAGE_HEIGHT
-    ) {
-      return;
-    }
-
-    if (mode === "position") {
-      try {
-        await saveCurrentPosition(p.lng, p.lat);
-        setMode("move");
-      } catch (error) {
-        console.error(error);
-        alert("Die Position konnte nicht gespeichert werden.");
-      }
-
-      return;
-    }
-
-    if (mode !== "marker") return;
+    ) return;
 
     setMode("move");
     openCreateModal({ x: p.lng, y: p.lat });

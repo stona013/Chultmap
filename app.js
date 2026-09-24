@@ -243,62 +243,61 @@ let hexGridOffsetY = 3.5;
   }
 
   function buildHexGridSvg(radius, offsetX, offsetY) {
-    const width = IMAGE_WIDTH;
-    const height = IMAGE_HEIGHT;
+  const width = IMAGE_WIDTH;
+  const height = IMAGE_HEIGHT;
 
-    const hexWidth = Math.sqrt(3) * radius;
-    const rowStep = radius * 1.5;
+  const hexWidth = radius * 2;
+  const hexHeight = Math.sqrt(3) * radius;
+  const colStep = radius * 1.5;
 
-    const paths = [];
+  const paths = [];
 
-    // Zusätzliche Reihen und Spalten außerhalb des Bildes verhindern,
-    // dass am Rand Lücken entstehen, wenn das Raster verschoben wird.
-    const startRow = Math.floor((-radius * 2 - offsetY) / rowStep) - 1;
-    const endRow = Math.ceil((height + radius * 2 - offsetY) / rowStep) + 1;
+  const startCol = Math.floor((-radius * 2 - offsetX) / colStep) - 1;
+  const endCol = Math.ceil((width + radius * 2 - offsetX) / colStep) + 1;
+
+  for (let col = startCol; col <= endCol; col++) {
+    const cx = offsetX + col * colStep;
+    const colShift = (Math.abs(col) % 2) * (hexHeight / 2);
+
+    const startRow = Math.floor((-hexHeight * 2 - offsetY - colShift) / hexHeight) - 1;
+    const endRow = Math.ceil((height + hexHeight * 2 - offsetY - colShift) / hexHeight) + 1;
 
     for (let row = startRow; row <= endRow; row++) {
-      const cy = offsetY + row * rowStep;
-      const rowShift = (Math.abs(row) % 2) * (hexWidth / 2);
+      const cy = offsetY + colShift + row * hexHeight;
 
-      const startCol = Math.floor((-hexWidth * 2 - offsetX - rowShift) / hexWidth) - 1;
-      const endCol = Math.ceil((width + hexWidth * 2 - offsetX - rowShift) / hexWidth) + 1;
-
-      for (let col = startCol; col <= endCol; col++) {
-        const cx = offsetX + rowShift + col * hexWidth;
-
-        const points = [];
-        for (let i = 0; i < 6; i++) {
-          const angle = Math.PI / 180 * (60 * i - 90);
-          const x = cx + radius * Math.cos(angle);
-          const y = cy + radius * Math.sin(angle);
-          points.push([x, y]);
-        }
-
-        const d = [
-          `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`,
-          ...points.slice(1).map(p => `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`),
-          "Z"
-        ].join(" ");
-
-        paths.push(d);
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i);
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        points.push([x, y]);
       }
-    }
 
-    return `
-      <svg xmlns="http://www.w3.org/2000/svg"
-           width="${width}"
-           height="${height}"
-           viewBox="0 0 ${width} ${height}">
-        <path d="${paths.join(" ")}"
-              fill="none"
-              stroke="#1d1d1d"
-              stroke-width="1.2"
-              stroke-linejoin="round"
-              opacity="${hexGridOpacity}"
-              vector-effect="non-scaling-stroke"/>
-      </svg>
-    `;
+      const d = [
+        `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`,
+        ...points.slice(1).map(p => `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`),
+        "Z"
+      ].join(" ");
+
+      paths.push(d);
+    }
   }
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="${width}"
+         height="${height}"
+         viewBox="0 0 ${width} ${height}">
+      <path d="${paths.join(" ")}"
+            fill="none"
+            stroke="#1d1d1d"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+            opacity="${hexGridOpacity}"
+            vector-effect="non-scaling-stroke"/>
+    </svg>
+  `;
+}
 
   function renderHexGrid() {
     if (hexGridOverlay) {

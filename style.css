@@ -478,3 +478,28 @@ main {
     right: auto;
   }
 }
+
+
+.current-position-pin {
+  width: 30px;
+  height: 30px;
+  background: #d4a72c;
+  border: 4px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 3px 8px rgba(0,0,0,.65);
+  box-sizing: border-box;
+}
+
+.current-position-dot {
+  width: 10px;
+  height: 10px;
+  margin: 6px;
+  background: #ffffff;
+  border-radius: 50%;
+}
+
+#positionModeBtn.active {
+  background: #2f6ea6;
+  border-color: #3f83be;
+}

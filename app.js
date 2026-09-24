@@ -111,9 +111,10 @@ let hexGridOpacity = 0.48;
 // Startwerte für das auf der Chult-Karte vorhandene Raster.
 // Falls die Linien um wenige Pixel versetzt sind, können Größe, X und Y
 // direkt über die eingebauten Raster-Einstellungen angepasst werden.
-let hexGridRadius = 5.0;
-let hexGridOffsetX = -4.0;
-let hexGridOffsetY = 3.5;
+let hexGridWidth = 9.8;
+let hexGridHeight = 8.5;
+let hexGridOffsetX = 1.5;
+let hexGridOffsetY = -7.5;
 
   ensureHexGridControls();
   renderHexGrid();
@@ -174,7 +175,8 @@ let hexGridOffsetY = 3.5;
       return label;
     };
 
-    panel.appendChild(makeNumber("Größe", "hexGridRadius", hexGridRadius, 0.1, 2, 20));
+    panel.appendChild(makeNumber("Breite", "hexGridWidth", hexGridWidth, 0.1, 2, 20));
+    panel.appendChild(makeNumber("Höhe", "hexGridHeight", hexGridHeight, 0.1, 2, 20));
     panel.appendChild(makeNumber("X", "hexGridOffsetX", hexGridOffsetX, 0.5, -40, 40));
     panel.appendChild(makeNumber("Y", "hexGridOffsetY", hexGridOffsetY, 0.5, -40, 40));
 
@@ -212,27 +214,32 @@ let hexGridOffsetY = 3.5;
       renderHexGrid();
     });
 
-    const radiusInput = panel.querySelector("#hexGridRadius");
+    const widthInput = panel.querySelector("#hexGridWidth");
+    const heightInput = panel.querySelector("#hexGridHeight");
     const offsetXInput = panel.querySelector("#hexGridOffsetX");
     const offsetYInput = panel.querySelector("#hexGridOffsetY");
 
     const refresh = () => {
-      hexGridRadius = Math.max(2, Math.min(20, Number(radiusInput.value) || 5));
+      hexGridWidth = Math.max(2, Math.min(20, Number(widthInput.value) || 9.8));
+      hexGridHeight = Math.max(2, Math.min(20, Number(heightInput.value) || 8.5));
       hexGridOffsetX = Math.max(-40, Math.min(40, Number(offsetXInput.value) || 0));
       hexGridOffsetY = Math.max(-40, Math.min(40, Number(offsetYInput.value) || 0));
       renderHexGrid();
     };
 
-    radiusInput.addEventListener("input", refresh);
+    widthInput.addEventListener("input", refresh);
+    heightInput.addEventListener("input", refresh);
     offsetXInput.addEventListener("input", refresh);
     offsetYInput.addEventListener("input", refresh);
 
     reset.addEventListener("click", () => {
-      hexGridRadius = 5.0;
-      hexGridOffsetX = -4.0;
-      hexGridOffsetY = 3.5;
+      hexGridWidth = 9.8;
+      hexGridHeight = 8.5;
+      hexGridOffsetX = 1.5;
+      hexGridOffsetY = -7.5;
 
-      radiusInput.value = String(hexGridRadius);
+      widthInput.value = String(hexGridWidth);
+      heightInput.value = String(hexGridHeight);
       offsetXInput.value = String(hexGridOffsetX);
       offsetYInput.value = String(hexGridOffsetY);
       opacity.value = "0.48";
@@ -242,62 +249,92 @@ let hexGridOffsetY = 3.5;
     });
   }
 
-  function buildHexGridSvg(radius, offsetX, offsetY) {
-  const width = IMAGE_WIDTH;
-  const height = IMAGE_HEIGHT;
+  function buildHexGridSvg(hexWidth, hexHeight, offsetX, offsetY) {
+    const width = IMAGE_WIDTH;
+    const height = IMAGE_HEIGHT;
 
-  const hexWidth = radius * 2;
-  const hexHeight = Math.sqrt(3) * radius;
-  const colStep = radius * 1.5;
+    // Flat-top Hexfelder:
+    // links/rechts liegen Spitzen, oben/unten liegen gerade Kanten.
+    //
+    // hexWidth  = Abstand vom Mittelpunkt bis zur linken/rechten Spitze
+    // hexHeight = Abstand vom Mittelpunkt bis zur oberen/unteren Kante
+    //
+    // Dadurch können Breite und Höhe unabhängig feinjustiert werden.
+    const columnStep = hexWidth * 1.5;
+    const rowStep = hexHeight * 2;
 
-  const paths = [];
+    const paths = [];
 
-  const startCol = Math.floor((-radius * 2 - offsetX) / colStep) - 1;
-  const endCol = Math.ceil((width + radius * 2 - offsetX) / colStep) + 1;
+    const startCol = Math.floor(
+      (-hexWidth * 2 - offsetX) / columnStep
+    ) - 2;
 
-  for (let col = startCol; col <= endCol; col++) {
-    const cx = offsetX + col * colStep;
-    const colShift = (Math.abs(col) % 2) * (hexHeight / 2);
+    const endCol = Math.ceil(
+      (width + hexWidth * 2 - offsetX) / columnStep
+    ) + 2;
 
-    const startRow = Math.floor((-hexHeight * 2 - offsetY - colShift) / hexHeight) - 1;
-    const endRow = Math.ceil((height + hexHeight * 2 - offsetY - colShift) / hexHeight) + 1;
+    for (let col = startCol; col <= endCol; col++) {
+      const cx = offsetX + col * columnStep;
 
-    for (let row = startRow; row <= endRow; row++) {
-      const cy = offsetY + colShift + row * hexHeight;
+      // Jede zweite Spalte ist um eine halbe Hexhöhe versetzt.
+      const columnShift =
+        ((col % 2) + 2) % 2 === 1
+          ? hexHeight
+          : 0;
 
-      const points = [];
-      for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 180 * (60 * i);
-        const x = cx + radius * Math.cos(angle);
-        const y = cy + radius * Math.sin(angle);
-        points.push([x, y]);
+      const startRow = Math.floor(
+        (-rowStep - offsetY - columnShift) / rowStep
+      ) - 2;
+
+      const endRow = Math.ceil(
+        (height + rowStep - offsetY - columnShift) / rowStep
+      ) + 2;
+
+      for (let row = startRow; row <= endRow; row++) {
+        const cy =
+          offsetY +
+          columnShift +
+          row * rowStep;
+
+        const points = [
+          [cx + hexWidth,     cy],
+          [cx + hexWidth / 2, cy + hexHeight],
+          [cx - hexWidth / 2, cy + hexHeight],
+          [cx - hexWidth,     cy],
+          [cx - hexWidth / 2, cy - hexHeight],
+          [cx + hexWidth / 2, cy - hexHeight]
+        ];
+
+        const d = [
+          `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`,
+          ...points
+            .slice(1)
+            .map(
+              p =>
+                `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`
+            ),
+          "Z"
+        ].join(" ");
+
+        paths.push(d);
       }
-
-      const d = [
-        `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`,
-        ...points.slice(1).map(p => `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`),
-        "Z"
-      ].join(" ");
-
-      paths.push(d);
     }
-  }
 
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg"
-         width="${width}"
-         height="${height}"
-         viewBox="0 0 ${width} ${height}">
-      <path d="${paths.join(" ")}"
-            fill="none"
-            stroke="#1d1d1d"
-            stroke-width="1.2"
-            stroke-linejoin="round"
-            opacity="${hexGridOpacity}"
-            vector-effect="non-scaling-stroke"/>
-    </svg>
-  `;
-}
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg"
+           width="${width}"
+           height="${height}"
+           viewBox="0 0 ${width} ${height}">
+        <path d="${paths.join(" ")}"
+              fill="none"
+              stroke="#1d1d1d"
+              stroke-width="1.2"
+              stroke-linejoin="round"
+              opacity="${hexGridOpacity}"
+              vector-effect="non-scaling-stroke"/>
+      </svg>
+    `;
+  }
 
   function renderHexGrid() {
     if (hexGridOverlay) {
@@ -306,7 +343,8 @@ let hexGridOffsetY = 3.5;
     }
 
     const svg = buildHexGridSvg(
-      hexGridRadius,
+      hexGridWidth,
+      hexGridHeight,
       hexGridOffsetX,
       hexGridOffsetY
     );

@@ -111,9 +111,9 @@ let hexGridOpacity = 0.48;
 // Startwerte für das auf der Chult-Karte vorhandene Raster.
 // Falls die Linien um wenige Pixel versetzt sind, können Größe, X und Y
 // direkt über die eingebauten Raster-Einstellungen angepasst werden.
-let hexGridRadius = 17.0;
-let hexGridOffsetX = 1.0;
-let hexGridOffsetY = 1.0;
+let hexGridRadius = 17.2;
+let hexGridOffsetX = 2.0;
+let hexGridOffsetY = 5.0;
 
   ensureHexGridControls();
   renderHexGrid();
@@ -228,9 +228,9 @@ let hexGridOffsetY = 1.0;
     offsetYInput.addEventListener("input", refresh);
 
     reset.addEventListener("click", () => {
-      hexGridRadius = 17.0;
-      hexGridOffsetX = 1.0;
-      hexGridOffsetY = 1.0;
+      hexGridRadius = 17.2;
+      hexGridOffsetX = 2.0;
+      hexGridOffsetY = 5.0;
 
       radiusInput.value = String(hexGridRadius);
       offsetXInput.value = String(hexGridOffsetX);

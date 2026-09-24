@@ -233,10 +233,10 @@ let hexGridOffsetY = -7.5;
     offsetYInput.addEventListener("input", refresh);
 
     reset.addEventListener("click", () => {
-      hexGridWidth = 9.8;
-      hexGridHeight = 8.5;
-      hexGridOffsetX = 1.5;
-      hexGridOffsetY = -7.5;
+      hexGridWidth = 9.93;
+      hexGridHeight = 8.62;
+      hexGridOffsetX = 9.60;
+      hexGridOffsetY = 8.30;
 
       widthInput.value = String(hexGridWidth);
       heightInput.value = String(hexGridHeight);
